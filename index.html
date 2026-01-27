@@ -5,28 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBOX BRAND | Luxury Fashion Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; }
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #000; margin: 0; overflow-x: hidden; }
         .font-serif { font-family: 'Playfair Display', serif; }
+        .luxury-gradient { background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); }
+        @keyframes reveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-reveal { animation: reveal 1s ease forwards; }
     </style>
 </head>
 <body>
-    <div id="root">
-        <nav class="p-6 border-b border-white/10 flex justify-between items-center">
-            <h1 class="text-3xl font-serif tracking-tighter">BBOX BRAND</h1>
-            <div class="space-x-6 text-sm uppercase tracking-widest">
-                <a href="#">New Arrivals</a>
-                <a href="#">Collections</a>
-                <a href="#">Cart (0)</a>
-            </div>
-        </nav>
+    <div id="root"></div>
 
-        <main class="flex flex-col items-center justify-center min-h-[80vh] text-center">
-            <h2 class="text-6xl md:text-8xl font-serif mb-6 opacity-90">LUXURY REDEFINED</h2>
-            <p class="max-w-md text-gray-400 mb-8 tracking-wide">Experience the pinnacle of premium fashion. Crafted for the extraordinary.</p>
-            <button class="bg-white text-black px-12 py-4 text-sm font-bold uppercase tracking-widest hover:bg-gray-200 transition">Shop Now</button>
-        </main>
-    </div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const PRODUCTS = [
+            { id: '1', name: 'Signature Stealth Tee', price: 2450, category: 'T-SHIRTS', imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1200', isFeatured: true },
+            { id: '2', name: 'Urban Tech V1 Tracksuit', price: 8900, category: 'TRACK SUITS', imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=1200', isFeatured: true },
+            { id: '3', name: 'Premium Heavyweight Hoodie', price: 5200, category: 'HOODIES', imageUrl: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=1200' },
+            { id: '4', name: 'Midnight Merino Sweater', price: 9800, category: 'SWEATERS', imageUrl: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&q=80&w=1200' }
+        ];
+
+        const BBoxApp = () => {
+            const [activeCategory, setActiveCategory] = useState('ALL');
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+
+            const filteredProducts = activeCategory === 'ALL' ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory);
+
+            return (
+                <div className="min-h-screen">
+                    <nav className="fixed top-0 w-full z-[100] bg-black/10 backdrop-blur-md h-20 flex justify-between items-center px-12 text-white">
+                        <h1 className="font-serif text-2xl font-black tracking-[0.3em] uppercase">BBOX</h1>
+                        <div className="hidden md:flex space-x-8 text-[10px] font-bold tracking-widest">
+                            {['ALL', 'T-SHIRTS', 'TRACK SUITS', 'HOODIES'].map(cat => (
+                                <button key={cat} onClick={() => setActiveCategory(cat)} className="hover:opacity-60">{cat}</button>
+                            ))}
+                        </div>
+                        <button onClick={() => setIsCartOpen(true)} className="text-sm font-bold">BAG ({cart.length})</button>
+                    </nav>
+
+                    <section className="relative h-[90vh] bg-black flex items-center justify-center overflow-hidden text-white">
+                        <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-50 grayscale" />
+                        <div className="absolute inset-0 luxury-gradient" />
+                        <div className="relative z-10 text-center animate-reveal">
+                            <p className="text-xs uppercase tracking-[1em] mb-6 opacity-70">The 2024 Archive</p>
+                            <h2 className="text-7xl font-serif italic mb-10">Stealth Luxury</h2>
+                            <button className="px-12 py-5 border border-white text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Explore Catalog</button>
+                        </div>
+                    </section>
+
+                    <main className="max-w-[1440px] mx-auto px-12 py-24">
+                        <h3 className="text-4xl font-serif font-bold uppercase tracking-widest mb-16 border-b pb-8">{activeCategory}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+                            {filteredProducts.map(p => (
+                                <div key={p.id} className="group animate-reveal">
+                                    <div className="aspect-[3/4] overflow-hidden bg-zinc-100 mb-6">
+                                        <img src={p.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                    </div>
+                                    <h4 className="text-[11px] font-bold uppercase tracking-widest mb-2">{p.name}</h4>
+                                    <p className="text-sm font-black">Rs. {p.price.toLocaleString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </main>
+
+                    <footer className="bg-black text-white py-20 text-center">
+                        <h4 className="font-serif text-3xl tracking-widest mb-4">BBOX BRAND</h4>
+                        <p className="text-[9px] opacity-40 uppercase tracking-[0.5em]">&copy; 2026 Interactive Retail. All Rights Reserved.</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BBoxApp />);
+    </script>
 </body>
 </html>
