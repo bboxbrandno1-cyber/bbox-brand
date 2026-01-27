@@ -96,25 +96,25 @@
 
         // --- FIREBASE CONFIGURATION ---
         // REPLACE THESE WITH YOUR KEYS FROM FIREBASE CONSOLE
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyB-gVlpH47-1wmlOWamEjcRlbOXl_JKafI",
+        const firebaseConfig = {
+  apiKey: "AIzaSyB-gVlpH47-1wmlOWamEjcRlbOXL_JKafI",
   authDomain: "bboxbrand-b7f60.firebaseapp.com",
   databaseURL: "https://bboxbrand-b7f60-default-rtdb.firebaseio.com",
   projectId: "bboxbrand-b7f60",
   storageBucket: "bboxbrand-b7f60.firebasestorage.app",
   messagingSenderId: "678435815084",
   appId: "1:678435815084:web:dd52ee29b19adea3146909",
-  measurementId: "G-5X3YNSQ1H4
-        };
+  measurementId: "G-5X3YNSQ1H4"
+};
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const storage = firebase.storage();
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.firestore();
+const auth = firebase.auth();
+const storage = firebase.storage(); // "n" hata kar "r" laga diya hai yahan
 
         const BRAND_NAME = "BBOX BRAND";
         const CURRENCY = "Rs.";
