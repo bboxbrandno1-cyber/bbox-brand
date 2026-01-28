@@ -1,10 +1,38 @@
 [
   {
-    "id": 1769611289516,
-    "name": "Bilala barwaa ",
-    "price": "2000",
+    "name": "STEALTH CORE HOODIE",
+    "price": 4500,
+    "category": "HOODIES",
+    "imageUrl": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "name": "ZINC TRACK SUIT",
+    "price": 8500,
+    "category": "TRACK SUITS",
+    "imageUrl": "https://images.unsplash.com/photo-1515434126000-961d90ff09db?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "name": "MINIMALIST TEE - NOIR",
+    "price": 2200,
     "category": "T-SHIRTS",
-    "imageUrl": "https://i.ibb.co/JWcp9JsK/273366cc3e28380f408cfee491ecadb5.webp",
-    "date": "1/28/2026"
+    "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "name": "PREMIUM WOOL SWEATER",
+    "price": 6200,
+    "category": "SWEATERS",
+    "imageUrl": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "name": "OVERSIZED GHOST HOODIE",
+    "price": 4800,
+    "category": "HOODIES",
+    "imageUrl": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "name": "ELITE ATHLEISURE SET",
+    "price": 9200,
+    "category": "TRACK SUITS",
+    "imageUrl": "https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&q=80&w=800"
   }
 ]
