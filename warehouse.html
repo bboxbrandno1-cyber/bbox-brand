@@ -21,25 +21,27 @@
                 Publish From Gallery
             </button>
         </div>
-        <div id="status" class="mt-4 text-center text-xs text-gray-400">System: Firebase Removed (GitHub Live)</div>
+        <div id="status" class="mt-4 text-center text-xs text-gray-400">System: Secure GitHub Mode</div>
     </div>
 
     <script>
-        // Aapka Token aur ImgBB Key set kar di gayi hain
         const IMGBB_KEY = "6e7d18cc7275f1ed12b62b19d6e95233"; 
-        const GH_TOKEN = "ghp_Qp1bqrcEh50EeXCZE6c7y1Vh40tNbx3qiHL7";
         const REPO = "bboxbrandno1-cyber/bbox-brand";
 
         async function publishToStore() {
+            // Har baar upload par ye aapse token mangega
+            const GH_TOKEN = prompt("Meharbani karke apna GitHub Token yahan paste karein:");
+            if(!GH_TOKEN) return alert("Token ke bagair upload nahi ho sakta!");
+
             const btn = document.getElementById('btn');
             const file = document.getElementById('imageInput').files[0];
             const name = document.getElementById('name').value;
             const price = document.getElementById('price').value;
             const category = document.getElementById('category').value;
 
-            if(!file || !name || !price) return alert("Meharbani karke pura data bharein!");
+            if(!file || !name || !price) return alert("Pura data bharein!");
 
-            btn.innerText = "UPLOADING IMAGE...";
+            btn.innerText = "UPLOADING...";
             btn.disabled = true;
 
             try {
@@ -50,34 +52,39 @@
                 const imgData = await imgRes.json();
                 const imageUrl = imgData.data.url;
 
-                btn.innerText = "UPDATING STORE...";
-
-                // 2. GitHub se products.json uthayein
+                // 2. Fetch products.json from GitHub
                 const ghUrl = `https://api.github.com/repos/${REPO}/contents/products.json`;
                 const resFetch = await fetch(ghUrl, { headers: { Authorization: `token ${GH_TOKEN}` } });
+                
+                if(resFetch.status === 401) throw new Error("Ghalat Token!");
+                
                 const fileData = await resFetch.json();
                 const products = JSON.parse(atob(fileData.content));
 
-                // 3. Naya product list mein sab se upar dalein
+                // 3. Add New Product
                 const newProduct = { id: Date.now(), name, price, category, imageUrl, date: new Date().toLocaleDateString() };
                 products.unshift(newProduct);
 
-                // 4. GitHub par wapas save karein
-                await fetch(ghUrl, {
+                // 4. Save Back to GitHub
+                const resPut = await fetch(ghUrl, {
                     method: "PUT",
                     headers: { Authorization: `token ${GH_TOKEN}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        message: `New Product: ${name}`,
+                        message: `Added: ${name}`,
                         content: btoa(JSON.stringify(products, null, 2)),
                         sha: fileData.sha
                     })
                 });
 
-                alert("Zabardast! Product website par live ho gaya hai.");
-                location.reload();
+                if(resPut.ok) {
+                    alert("Zabardast! Product website par live ho gaya hai.");
+                    location.reload();
+                } else {
+                    alert("Kuch masla hai, shayad token block ho gaya.");
+                }
+
             } catch (e) {
-                console.error(e);
-                alert("Koi masla aaya hai. Check karein ke products.json file bani hui hai ya nahi.");
+                alert("Error: " + e.message);
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Publish From Gallery";
