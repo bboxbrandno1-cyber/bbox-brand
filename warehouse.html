@@ -11,6 +11,20 @@
         .loader { border: 2px solid #f3f3f3; border-top: 2px solid #000; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         input, select { border-radius: 0 !important; }
+        .custom-file-upload {
+            border: 1px dashed #ccc;
+            display: inline-block;
+            padding: 20px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+        }
+        .custom-file-upload:hover { border-color: #000; background: #f0f0f0; }
     </style>
 </head>
 <body>
@@ -20,6 +34,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
     <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -44,6 +59,7 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
         const App = () => {
             const [user, setUser] = useState(null);
@@ -57,9 +73,11 @@
             const [name, setName] = useState('');
             const [price, setPrice] = useState('');
             const [category, setCategory] = useState(CATEGORIES[0]);
-            const [imageUrl, setImageUrl] = useState('');
+            const [file, setFile] = useState(null);
+            const [previewUrl, setPreviewUrl] = useState('');
             const [editingId, setEditingId] = useState(null);
             const [actionLoading, setActionLoading] = useState(false);
+            const [uploadProgress, setUploadProgress] = useState(0);
 
             useEffect(() => {
                 const unsub = auth.onAuthStateChanged(u => {
@@ -89,19 +107,76 @@
                 } catch (err) { setAuthError(err.message); }
             };
 
+            const handleFileChange = (e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    setFile(selectedFile);
+                    setPreviewUrl(URL.createObjectURL(selectedFile));
+                }
+            };
+
             const handleSave = async (e) => {
                 e.preventDefault();
+                if (!file && !editingId) return alert('Please select an image.');
                 setActionLoading(true);
-                const data = { name, price: Number(price), category, imageUrl, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                
                 try {
+                    let finalImageUrl = '';
+                    
+                    if (file) {
+                        const fileRef = storage.ref(`products/${Date.now()}_${file.name}`);
+                        const uploadTask = fileRef.put(file);
+                        
+                        await new Promise((resolve, reject) => {
+                            uploadTask.on('state_changed', 
+                                (snapshot) => {
+                                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                    setUploadProgress(progress);
+                                }, 
+                                (error) => reject(error), 
+                                async () => {
+                                    finalImageUrl = await uploadTask.snapshot.ref.getDownloadURL();
+                                    resolve();
+                                }
+                            );
+                        });
+                    }
+
+                    const data = { 
+                        name, 
+                        price: Number(price), 
+                        category, 
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                    };
+
+                    if (finalImageUrl) data.imageUrl = finalImageUrl;
+
                     if (editingId) {
                         await db.collection('products').doc(editingId).update(data);
                     } else {
-                        await db.collection('products').add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                        await db.collection('products').add({ 
+                            ...data, 
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                        });
                     }
-                    setName(''); setPrice(''); setCategory(CATEGORIES[0]); setImageUrl(''); setEditingId(null);
-                } catch (err) { alert(err.message); }
-                setActionLoading(false);
+                    
+                    resetForm();
+                    alert('ARTICLE COMMITTED SUCCESSFULLY.');
+                } catch (err) { 
+                    alert('Error: ' + err.message); 
+                } finally {
+                    setActionLoading(false);
+                    setUploadProgress(0);
+                }
+            };
+
+            const resetForm = () => {
+                setName(''); 
+                setPrice(''); 
+                setCategory(CATEGORIES[0]); 
+                setFile(null); 
+                setPreviewUrl('');
+                setEditingId(null);
             };
 
             const handleDelete = async (id) => {
@@ -117,7 +192,7 @@
                         <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="EMAIL" required className="w-full border-b py-3 outline-none" />
                         <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="PASSWORD" required className="w-full border-b py-3 outline-none" />
                         {authError && <p className="text-xs text-red-500 font-bold">{authError}</p>}
-                        <button type="submit" className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest text-xs">Authorize</button>
+                        <button type="submit" className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest text-xs hover:bg-zinc-800 transition-all">Authorize</button>
                     </form>
                 </div>
             );
@@ -126,38 +201,72 @@
                 <div className="max-w-7xl mx-auto px-6 py-20">
                     <div className="flex justify-between items-end border-b pb-8 mb-16">
                         <h1 className="text-4xl font-black uppercase tracking-tighter">Inventory Manager</h1>
-                        <button onClick={() => auth.signOut()} className="text-[10px] font-bold uppercase text-zinc-400 hover:text-black tracking-widest">Disconnect</button>
+                        <button onClick={() => auth.signOut()} className="text-[10px] font-bold uppercase text-zinc-400 hover:text-black tracking-widest transition-colors">Disconnect</button>
                     </div>
 
                     <div className="grid lg:grid-cols-3 gap-20">
                         <div className="lg:col-span-1">
                             <form onSubmit={handleSave} className="bg-white p-10 border space-y-8 sticky top-10">
                                 <h3 className="font-bold uppercase tracking-widest text-xs border-b pb-2">{editingId ? 'Modify Article' : 'Register Article'}</h3>
+                                
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">Product Visual</label>
+                                    <label className="custom-file-upload">
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                                        {previewUrl ? 'Change Image' : 'Pick from Gallery'}
+                                    </label>
+                                    {previewUrl && (
+                                        <div className="mt-4 aspect-[3/4] overflow-hidden bg-zinc-100">
+                                            <img src={previewUrl} className="w-full h-full object-cover grayscale" />
+                                        </div>
+                                    )}
+                                </div>
+
                                 <input value={name} onChange={e => setName(e.target.value)} placeholder="TITLE" required className="w-full border-b py-2 text-xs font-bold outline-none" />
                                 <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="PRICE" required className="w-full border-b py-2 text-xs font-bold outline-none" />
-                                <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border-b py-2 text-xs font-bold outline-none">
+                                
+                                <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border-b py-2 text-xs font-bold outline-none bg-transparent">
                                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
-                                <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="IMAGE URL (HTTPS://...)" required className="w-full border-b py-2 text-xs font-bold outline-none" />
-                                <button type="submit" disabled={actionLoading} className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest text-[10px]">
-                                    {actionLoading ? 'WAIT...' : (editingId ? 'COMMIT CHANGES' : 'DEPLOY')}
-                                </button>
-                                {editingId && <button type="button" onClick={() => setEditingId(null)} className="w-full border py-2 text-[10px] font-bold uppercase">Cancel</button>}
+
+                                <div className="space-y-4">
+                                    {uploadProgress > 0 && uploadProgress < 100 && (
+                                        <div className="w-full bg-zinc-100 h-1">
+                                            <div className="bg-black h-1 transition-all" style={{ width: `${uploadProgress}%` }}></div>
+                                        </div>
+                                    )}
+                                    <button type="submit" disabled={actionLoading} className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest text-[10px] hover:bg-zinc-800 flex justify-center items-center">
+                                        {actionLoading ? <div className="loader border-t-white"></div> : (editingId ? 'COMMIT CHANGES' : 'DEPLOY')}
+                                    </button>
+                                    {editingId && (
+                                        <button type="button" onClick={resetForm} className="w-full border py-2 text-[10px] font-bold uppercase hover:bg-zinc-100 transition-all">Cancel Edit</button>
+                                    )}
+                                </div>
                             </form>
                         </div>
+
                         <div className="lg:col-span-2 space-y-6">
                             {products.map(p => (
-                                <div key={p.id} className="bg-white border p-6 flex items-center justify-between group">
+                                <div key={p.id} className="bg-white border p-6 flex items-center justify-between group hover:border-black transition-all">
                                     <div className="flex items-center space-x-8">
-                                        <img src={p.imageUrl} className="w-16 h-20 object-cover grayscale" />
+                                        <div className="w-16 h-20 bg-zinc-100 overflow-hidden">
+                                            <img src={p.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                        </div>
                                         <div>
                                             <h4 className="font-bold text-sm uppercase">{p.name}</h4>
                                             <p className="text-[10px] text-zinc-400 font-bold uppercase">{p.category} — RS.{p.price}</p>
                                         </div>
                                     </div>
                                     <div className="flex space-x-4">
-                                        <button onClick={() => { setEditingId(p.id); setName(p.name); setPrice(p.price); setCategory(p.category); setImageUrl(p.imageUrl); }} className="text-[10px] font-bold text-zinc-400 hover:text-black">MODIFY</button>
-                                        <button onClick={() => handleDelete(p.id)} className="text-[10px] font-bold text-zinc-400 hover:text-red-500">EVICT</button>
+                                        <button onClick={() => { 
+                                            setEditingId(p.id); 
+                                            setName(p.name); 
+                                            setPrice(p.price); 
+                                            setCategory(p.category); 
+                                            setPreviewUrl(p.imageUrl);
+                                            window.scrollTo({top: 0, behavior: 'smooth'});
+                                        }} className="text-[10px] font-bold text-zinc-400 hover:text-black tracking-widest">MODIFY</button>
+                                        <button onClick={() => handleDelete(p.id)} className="text-[10px] font-bold text-zinc-400 hover:text-red-500 tracking-widest">EVICT</button>
                                     </div>
                                 </div>
                             ))}
@@ -166,6 +275,7 @@
                 </div>
             );
         };
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
