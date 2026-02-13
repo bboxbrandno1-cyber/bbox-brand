@@ -1,396 +1,488 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>BBOX BRAND | Stealth Luxury Archive</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&display=swap" rel="stylesheet">
-    
-    <!-- Dependencies -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBOX BRAND | The Absolute Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Dependencies -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <style>
-        :root {
-            --obsidian: #000000;
-            --zinc: #ffffff;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--obsidian);
-            color: var(--zinc);
-            margin: 0;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            cursor: default !important;
-            user-select: none;
-        }
+    <style>
+        :root {
+            --obsidian: #050505;
+            --zinc: #ffffff;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--obsidian);
+            color: var(--zinc);
+            margin: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        .luxury-text {
-            text-transform: uppercase;
-            letter-spacing: 0.5em;
-            font-weight: 900;
-        }
+        /* Grainy Film Overlay */
+        body::after {
+            content: "";
+            position: fixed;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background-image: url("https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Grain_Noise.jpg");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 9999;
+            animation: grain 8s steps(10) infinite;
+        }
 
-        .text-glow {
-            text-shadow: 0 0 20px rgba(255,255,255,0.25);
-        }
+        @keyframes grain {
+            0%, 100% { transform:translate(0, 0); }
+            10% { transform:translate(-5%, -10%); }
+            20% { transform:translate(-15%, 5%); }
+            30% { transform:translate(7%, -25%); }
+            40% { transform:translate(-5%, 25%); }
+            50% { transform:translate(-15%, 10%); }
+            60% { transform:translate(15%, 0%); }
+            70% { transform:translate(0%, 15%); }
+            80% { transform:translate(3%, 35%); }
+            90% { transform:translate(-10%, 10%); }
+        }
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .luxury-text {
+            text-transform: uppercase;
+            letter-spacing: 0.5em;
+            font-weight: 900;
+        }
 
-        .reveal-zoom {
-            animation: revealZoom 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        .text-glow {
+            text-shadow: 0 4px 15px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.8);
+        }
 
-        @keyframes revealZoom {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .nav-blur {
-            backdrop-filter: blur(20px);
-            background: rgba(0, 0, 0, 0.95);
-        }
+        .reveal-zoom {
+            animation: revealZoom 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
 
-        .hover-reveal {
-            opacity: 0;
-            transition: all 0.5s ease;
-        }
-        .group:hover .hover-reveal {
-            opacity: 1;
-        }
+        @keyframes revealZoom {
+            from { transform: scale(1.05); opacity: 0; filter: blur(10px); }
+            to { transform: scale(1); opacity: 1; filter: blur(0); }
+        }
 
-        .hero-title {
-            font-size: clamp(2rem, 10vw, 5rem);
-            line-height: 1;
-            letter-spacing: 0.6em;
-        }
-        
-        .product-card-img {
-            aspect-ratio: 3/4;
-            background: #080808;
-        }
+        .nav-blur {
+            backdrop-filter: blur(25px);
+            background: rgba(5, 5, 5, 0.9);
+        }
 
-        .sold-out-badge {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
+        .hover-reveal {
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .group:hover .hover-reveal {
+            opacity: 1;
+        }
+
+        /* Mobile specific font scaling */
+        .hero-title {
+            font-size: 8vw;
+            line-height: 1.2;
+        }
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 4.5rem;
+            }
+        }
+    </style>
 <script type="importmap">
 {
-  "imports": {
-    "firebase/": "https://esm.sh/firebase@^12.9.0/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "firebase/": "https://esm.sh/firebase@^12.9.0/"
+  }
 }
 </script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        // --- DYNAMIC CONFIG ---
-        const BRAND_NAME = "BBOX BRAND";
-        const CURRENCY = "Rs.";
+        // --- CONSTANTS ---
+        const WHATSAPP_NUMBER = "923358211166";
+        const CATEGORIES = ['ALL', 'T-SHIRTS', 'TRACK SUITS', 'HOODIES', 'SWEATERS'];
+        const CURRENCY = "Rs.";
+        const BRAND_NAME = "BBOX BRAND";
 
-        // Haptic Feedback Helper
-        const triggerHaptic = () => {
-            if ("vibrate" in navigator) {
-                navigator.vibrate(15);
-            }
-        };
+        const MOCK_PRODUCTS = [
+          { "id": "mock-1", "name": "STEALTH CORE HOODIE", "price": 4500, "category": "HOODIES", "imageUrl": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800" },
+          { "id": "mock-2", "name": "ZINC TRACK SUIT", "price": 8500, "category": "TRACK SUITS", "imageUrl": "https://images.unsplash.com/photo-1515434126000-961d90ff09db?auto=format&fit=crop&q=80&w=800" },
+          { "id": "mock-3", "name": "MINIMALIST TEE - NOIR", "price": 2200, "category": "T-SHIRTS", "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800" }
+        ];
 
-        // --- COMPONENTS ---
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMSAjTaf9FK2YTgfFpt8kXC4XClAoHHdw",
+            authDomain: "bboxbrand-b7f60.firebaseapp.com",
+            projectId: "bboxbrand-b7f60",
+            storageBucket: "bboxbrand-b7f60.firebasestorage.app",
+            messagingSenderId: "678435815084",
+            appId: "1:678435815084:web:dd52ee29b19adea3146989"
+        };
 
-        const EagleLogo = ({ className }) => (
-            <svg viewBox="0 0 400 450" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M200 20L40 80V180C40 280 200 420 200 420C200 420 360 280 360 180V80L200 20Z" stroke="currentColor" strokeWidth="6" />
-                <path d="M200 120C200 120 180 130 160 110C140 90 80 100 60 140C120 130 160 160 180 200L200 250L220 200C240 160 280 130 340 140C320 100 260 90 240 110C220 130 200 120 200 120Z" fill="currentColor" />
-                <g transform="translate(130, 260) scale(0.6)">
-                    <path d="M0 20H60M10 40H70M20 60H80" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
-                    <path d="M90 10H140C160 10 170 25 170 40C170 55 160 70 140 70H90V10Z" fill="currentColor" />
-                    <path d="M180 10H230C250 10 260 25 260 40C260 55 250 70 230 70H180V10Z" fill="currentColor" />
-                </g>
-            </svg>
-        );
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        const Navbar = ({ cartCount, onCartOpen }) => {
-            const [scrolled, setScrolled] = useState(false);
-            useEffect(() => {
-                const handleScroll = () => setScrolled(window.scrollY > 50);
-                window.addEventListener('scroll', handleScroll);
-                return () => window.removeEventListener('scroll', handleScroll);
-            }, []);
+        // --- COMPONENTS ---
 
-            return (
-                <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ${scrolled ? 'nav-blur h-16 border-b border-white/5' : 'h-24 bg-transparent'}`}>
-                    <div className="max-w-[1400px] mx-auto h-full px-8 flex justify-between items-center">
-                        <div onClick={() => { triggerHaptic(); window.scrollTo({top: 0, behavior: 'smooth'}); }} className="flex items-center space-x-4 cursor-pointer">
-                            <EagleLogo className="w-8 h-8 text-white" />
-                            <span className="luxury-text text-xs text-white tracking-[0.5em] hidden sm:block">BBOX</span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-10">
-                            <button onClick={() => { triggerHaptic(); onCartOpen(); }} className="relative group flex items-center space-x-4">
-                                <span className="luxury-text text-[10px] text-white">BAG</span>
-                                {cartCount > 0 && (
-                                    <span className="bg-white text-black text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </nav>
-            );
-        };
+        const EagleLogo = ({ className }) => (
+            <svg viewBox="0 0 400 450" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M200 20L40 80V180C40 280 200 420 200 420C200 420 360 280 360 180V80L200 20Z" stroke="currentColor" strokeWidth="6" />
+                <path d="M200 120C200 120 180 130 160 110C140 90 80 100 60 140C120 130 160 160 180 200L200 250L220 200C240 160 280 130 340 140C320 100 260 90 240 110C220 130 200 120 200 120Z" fill="currentColor" />
+                <g transform="translate(130, 260) scale(0.6)">
+                    <path d="M0 20H60M10 40H70M20 60H80" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+                    <path d="M90 10H140C160 10 170 25 170 40C170 55 160 70 140 70H90V10Z" fill="currentColor" />
+                    <path d="M180 10H230C250 10 260 25 260 40C260 55 250 70 230 70H180V10Z" fill="currentColor" />
+                </g>
+            </svg>
+        );
 
-        const Cart = ({ isOpen, setIsOpen, cart, removeFromCart, updateQty, total, config }) => {
-            if (!isOpen) return null;
-            const handleCheckout = () => {
-                triggerHaptic();
-                let message = `*BBOX BRAND ORDER*%0A%0A`;
-                cart.forEach((item, index) => {
-                    message += `${index + 1}. *${item.name}* (x${item.qty})%0A`;
-                });
-                message += `%0A*Total Value:* ${CURRENCY}${total.toLocaleString()}%0A%0A${config.message || ''}`;
-                window.open(`https://wa.me/${config.whatsapp || '923358211166'}?text=${message}`, '_blank');
-            };
+        const Navbar = ({ cartCount, onCartOpen, isMuted, onToggleMute }) => {
+            const [scrolled, setScrolled] = useState(false);
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 50);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
 
-            return (
-                <div className="fixed inset-0 z-[100] flex justify-end">
-                    <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setIsOpen(false)} />
-                    <div className="relative w-full max-w-md bg-[#050505] h-full border-l border-white/5 flex flex-col">
-                        <div className="p-8 flex justify-between items-center border-b border-white/5">
-                            <h2 className="luxury-text text-xs">ARCHIVE BAG</h2>
-                            <button onClick={() => setIsOpen(false)} className="text-white text-3xl font-thin">×</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-                            {cart.length === 0 ? <p className="text-zinc-800 text-center luxury-text text-[9px] mt-40">Empty</p> : cart.map(item => (
-                                <div key={item.id} className="flex space-x-6 border-b border-white/5 pb-8">
-                                    <img src={item.imageUrl} className="w-16 h-20 object-cover grayscale brightness-75" />
-                                    <div className="flex-1 flex flex-col justify-between">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="luxury-text text-[9px] text-white leading-relaxed">{item.name}</h4>
-                                            <button onClick={() => { triggerHaptic(); removeFromCart(item.id); }} className="text-zinc-600 hover:text-white transition-colors">×</button>
-                                        </div>
-                                        <div className="flex justify-between items-end">
-                                            <div className="flex items-center space-x-6 border border-white/10 px-3 py-1 text-white text-[10px]">
-                                                <button onClick={() => { triggerHaptic(); updateQty(item.id, -1); }}>-</button>
-                                                <span className="font-bold">{item.qty}</span>
-                                                <button onClick={() => { triggerHaptic(); updateQty(item.id, 1); }}>+</button>
-                                            </div>
-                                            <p className="luxury-text text-[10px] text-white">{CURRENCY}{(item.price * item.qty).toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {cart.length > 0 && (
-                            <div className="p-8 bg-[#080808] border-t border-white/5 space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <span className="luxury-text text-[9px] opacity-30">Archive Total</span>
-                                    <span className="luxury-text text-xl text-white">{CURRENCY}{total.toLocaleString()}</span>
-                                </div>
-                                <button onClick={handleCheckout} className="w-full bg-white text-black py-6 luxury-text text-[10px] hover:bg-zinc-200 transition-all font-black tracking-[0.8em]">CHECKOUT ARCHIVE</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
+            return (
+                <nav className={`fixed top-0 w-full z-50 transition-all duration-1000 ${scrolled ? 'nav-blur h-16 md:h-20 border-b border-white/5' : 'h-24 md:h-32 bg-transparent'}`}>
+                    <div className="max-w-[1700px] mx-auto h-full px-6 md:px-20 flex justify-between items-center">
+                        <div onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="flex items-center space-x-4 md:space-x-8 cursor-pointer group">
+                            <EagleLogo className="w-8 h-8 md:w-10 md:h-10 text-white drop-shadow-2xl" />
+                            <span className="luxury-text text-xs md:text-xl tracking-[0.5em] text-white text-glow hidden sm:block">BBOX BRAND</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6 md:space-x-12">
+                            <button onClick={onToggleMute} className="group relative">
+                                <span className="luxury-text text-[9px] md:text-[11px] text-white text-glow opacity-60 group-hover:opacity-100 transition-all">
+                                    {isMuted ? 'UNMUTE' : 'MUTE'}
+                                </span>
+                            </button>
+                            
+                            <button onClick={onCartOpen} className="relative group flex items-center space-x-2 md:space-x-4">
+                                <span className="luxury-text text-[10px] md:text-sm text-white text-glow">BAG</span>
+                                {cartCount > 0 && (
+                                    <span className="bg-white text-black text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
 
-        const StoreView = ({ products, activeCat, setActiveCat, addToCart, loading, config }) => {
-            const handleDirectOrder = (p) => {
-                triggerHaptic();
-                const prefix = config.message || 'Assalam-o-Alaikum BBOX, I want to order';
-                const message = `${prefix} ${p.name}.`;
-                window.open(`https://wa.me/${config.whatsapp || '923358211166'}?text=${encodeURIComponent(message)}`, '_blank');
-            };
+        const Cart = ({ isOpen, setIsOpen, cart, removeFromCart, updateQty, total }) => {
+            if (!isOpen) return null;
+            const handleConfirmOrder = () => {
+                let message = `*NEW ORDER - BBOX BRAND*%0A%0A`;
+                cart.forEach((item, index) => {
+                    message += `${index + 1}. *${item.name}*%0A   Qty: ${item.qty}%0A   Price: ${CURRENCY}${item.price.toLocaleString()}%0A%0A`;
+                });
+                message += `*Total:* ${CURRENCY}${total.toLocaleString()}%0A%0APlease process this order.`;
+                window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+            };
 
-            const categories = ['ALL', ...(config.categories || [])];
+            return (
+                <div className="fixed inset-0 z-[100] flex justify-end">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsOpen(false)} />
+                    <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col">
+                        <div className="p-8 border-b flex justify-between items-center">
+                            <h2 className="luxury-text text-xl text-black">BAG</h2>
+                            <button onClick={() => setIsOpen(false)} className="text-black text-2xl">×</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                            {cart.length === 0 ? <p className="text-zinc-400 text-center luxury-text mt-20 opacity-30">Archive Empty</p> : cart.map(item => (
+                                <div key={item.id} className="flex space-x-4 border-b pb-8">
+                                    <img src={item.imageUrl} className="w-20 h-28 object-cover grayscale" />
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div className="flex justify-between">
+                                            <h4 className="luxury-text text-[11px] text-black">{item.name}</h4>
+                                            <button onClick={() => removeFromCart(item.id)} className="text-zinc-300 hover:text-black">×</button>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <div className="flex items-center space-x-4 border px-2 py-1 text-black text-xs font-bold">
+                                                <button onClick={() => updateQty(item.id, -1)}>-</button>
+                                                <span>{item.qty}</span>
+                                                <button onClick={() => updateQty(item.id, 1)}>+</button>
+                                            </div>
+                                            <p className="luxury-text text-sm text-black">{CURRENCY}{(item.price * item.qty).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {cart.length > 0 && (
+                            <div className="p-8 border-t bg-zinc-50 space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="luxury-text text-[10px]">Total</span>
+                                    <span className="luxury-text text-2xl text-black">{CURRENCY}{total.toLocaleString()}</span>
+                                </div>
+                                <button onClick={handleConfirmOrder} className="w-full bg-black text-white py-6 luxury-text text-sm hover:bg-zinc-800 transition-all">CHECKOUT VIA WHATSAPP</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
 
-            return (
-                <div className="pt-24 md:pt-32">
-                    {/* Centered Hero Branding */}
-                    <div className="flex flex-col items-center justify-center text-center px-6 py-20 md:py-40">
-                        <EagleLogo className="w-24 h-24 md:w-36 md:h-36 text-white mb-10 reveal-zoom" />
-                        <h1 className="luxury-text hero-title text-white text-glow mb-16 reveal-zoom" style={{ animationDelay: '0.2s' }}>BBOX BRAND</h1>
-                        
-                        {/* Swipable Nav */}
-                        <div className="w-full max-w-4xl overflow-x-auto no-scrollbar flex flex-nowrap justify-start md:justify-center gap-10 md:gap-16 px-8 mt-12 reveal-zoom" style={{ animationDelay: '0.4s' }}>
-                            {categories.map(cat => (
-                                <button 
-                                    key={cat} 
-                                    onClick={() => { triggerHaptic(); setActiveCat(cat); }} 
-                                    className={`luxury-text text-[10px] md:text-xs transition-all duration-700 whitespace-nowrap ${activeCat === cat ? 'text-white border-b-2 border-white pb-3' : 'text-zinc-700 hover:text-white'}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+        const StoreView = ({ products, activeCat, setActiveCat, addToCart, loading }) => {
+            const videoRef = useRef(null);
 
-                    {/* Catalogue Grid */}
-                    <main className="max-w-[1500px] mx-auto px-8 py-20">
-                        {loading ? (
-                            <div className="h-64 flex flex-col items-center justify-center space-y-4">
-                                <div className="w-6 h-6 border-2 border-white/10 border-t-white rounded-full animate-spin"></div>
-                                <p className="luxury-text text-[8px] opacity-30">Syncing Warehouse...</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-32">
-                                {products.map((p) => {
-                                    const isSoldOut = p.stock === 0 || p.stock === "0";
-                                    return (
-                                        <div key={p.id} className="group reveal-zoom">
-                                            <div className="relative product-card-img overflow-hidden">
-                                                <img src={p.imageUrl} className={`w-full h-full object-cover grayscale transition-all duration-1000 ${!isSoldOut ? 'group-hover:grayscale-0 group-hover:scale-110' : 'opacity-40'}`} alt={p.name} />
-                                                
-                                                {isSoldOut ? (
-                                                    <div className="absolute inset-0 flex items-center justify-center z-20">
-                                                        <div className="sold-out-badge luxury-text text-white px-8 py-4 text-[10px] tracking-[1em] shadow-2xl">SOLD OUT</div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="absolute inset-0 bg-black/70 hover-reveal flex flex-col items-center justify-center p-12 text-center space-y-8 z-10">
-                                                        <p className="luxury-text text-2xl text-white">{CURRENCY}{p.price.toLocaleString()}</p>
-                                                        <div className="flex flex-col w-full space-y-4">
-                                                            <button onClick={() => { triggerHaptic(); addToCart(p); }} className="luxury-text text-[10px] border border-white px-8 py-5 hover:bg-white hover:text-black transition-all">ADD TO BAG</button>
-                                                            <button onClick={() => handleDirectOrder(p)} className="luxury-text text-[9px] text-zinc-500 hover:text-white underline underline-offset-8 transition-colors">ACQUIRE NOW</button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="mt-10 text-center">
-                                                <h3 className="luxury-text text-[11px] text-white mb-2">{p.name}</h3>
-                                                <p className="luxury-text text-[8px] text-zinc-800">{p.category}</p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        {products.length === 0 && !loading && (
-                            <div className="h-64 flex items-center justify-center">
-                                <p className="luxury-text text-[10px] opacity-20">No articles found in this section.</p>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            );
-        };
+            useEffect(() => {
+                if (videoRef.current) {
+                    videoRef.current.play().catch(e => console.log("Video Play Error:", e));
+                }
+            }, []);
 
-        const Footer = ({ config }) => (
-            <footer className="bg-[#000000] text-white pt-40 pb-20 px-8 border-t border-white/5 mt-40">
-                <div className="max-w-4xl mx-auto flex flex-col items-center space-y-16 text-center">
-                    <EagleLogo className="w-10 h-10 opacity-10" />
-                    <div className="space-y-6">
-                        <h4 className="luxury-text text-xs tracking-[1.5em] opacity-40">BBOX BRAND</h4>
-                        <p className="text-[9px] text-zinc-800 luxury-text max-w-xs leading-relaxed mx-auto">High-End Minimalist Archives. Established 2024. HQ: +{config.whatsapp || '923358211166'}</p>
-                    </div>
-                    <div className="pt-20 border-t border-white/5 w-full flex flex-col md:flex-row justify-between items-center text-[8px] text-zinc-900 luxury-text">
-                        <p className="tracking-[0.4em]">&copy; 2024 BBOX BRAND INTERNATIONAL.</p>
-                        <div className="flex space-x-12 mt-8 md:mt-0 tracking-[0.4em]"><span>PRIVACY</span><span>SECURITY</span></div>
-                    </div>
-                </div>
-            </footer>
-        );
+            const handleCategorySelect = (cat) => {
+                setActiveCat(cat);
+                const target = document.getElementById('archive');
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            };
 
-        // --- MAIN APPLICATION ---
-        const App = () => {
-            const [products, setProducts] = useState([]);
-            const [config, setConfig] = useState({ categories: [], whatsapp: '923358211166', message: 'Assalam-o-Alaikum BBOX, I want to order' });
-            const [cart, setCart] = useState([]);
-            const [isCartOpen, setIsCartOpen] = useState(false);
-            const [activeCat, setActiveCat] = useState('ALL');
-            const [loading, setLoading] = useState(true);
-            const [isPreloading, setIsPreloading] = useState(true);
+            const handleDirectOrder = (p) => {
+                const message = `*ARCHIVE INQUIRY*%0AArticle: *${p.name}*%0APrice: ${CURRENCY}${p.price.toLocaleString()}%0A%0AIs this available?`;
+                window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+            };
 
-            useEffect(() => {
-                const timer = setTimeout(() => setIsPreloading(false), 1500);
-                return () => clearTimeout(timer);
-            }, []);
+            return (
+                <div className="relative">
+                    <header className="relative h-screen flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 z-0">
+                            <video ref={videoRef} autoPlay muted loop playsInline className="w-full h-full object-cover grayscale contrast-125 brightness-[0.3]">
+                                <source src="https://assets.mixkit.co/videos/preview/mixkit-fashion-model-walking-in-a-dark-room-41315-large.mp4" type="video/mp4" />
+                            </video>
+                        </div>
+                        
+                        <div className="relative z-10 flex flex-col items-center text-center px-4 w-full">
+                            <div className="w-32 md:w-60 mb-10 md:mb-16">
+                                <EagleLogo className="w-full h-auto text-white opacity-100 drop-shadow-[0_0_40px_rgba(0,0,0,1)]" />
+                            </div>
+                            <h1 className="luxury-text hero-title text-white text-glow mb-16 md:mb-24 tracking-[0.8em]">BBOX BRAND</h1>
+                            
+                            <div className="w-full overflow-x-auto no-scrollbar flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-8 md:gap-16 px-6 pb-6">
+                                {CATEGORIES.map(cat => (
+                                    <button 
+                                        key={cat} 
+                                        onClick={() => handleCategorySelect(cat)} 
+                                        className={`luxury-text text-[10px] md:text-lg text-glow transition-all duration-700 whitespace-nowrap ${activeCat === cat ? 'text-white border-b-2 border-white pb-2' : 'text-zinc-600 hover:text-white'}`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-            useEffect(() => {
-                try {
-                    const firebaseConfig = {
-                        apiKey: "AIzaSyCMSAjTaf9FK2YTgfFpt8kXC4XClAoHHdw",
-                        authDomain: "bboxbrand-b7f60.firebaseapp.com",
-                        projectId: "bboxbrand-b7f60",
-                        storageBucket: "bboxbrand-b7f60.firebasestorage.app",
-                        messagingSenderId: "678435815084",
-                        appId: "1:678435815084:web:dd52ee29b19adea3146989"
-                    };
-                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                    const db = firebase.firestore();
-                    
-                    const unsubProducts = db.collection('products').orderBy('createdAt', 'desc')
-                        .onSnapshot(snapshot => {
-                            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            setProducts(data);
-                            setLoading(false);
-                        });
-                        
-                    const unsubConfig = db.collection('config').doc('main').onSnapshot(doc => {
-                        if (doc.exists) setConfig(doc.data());
-                    });
+                        <div className="absolute bottom-10 w-full text-center z-10">
+                            <p className="luxury-text text-[10px] text-zinc-600 text-glow animate-bounce">SCROLL ARCHIVE</p>
+                        </div>
+                    </header>
 
-                    return () => { unsubProducts(); unsubConfig(); };
-                } catch (e) {
-                    setLoading(false);
-                }
-            }, []);
+                    <main id="archive" className="max-w-[1700px] mx-auto px-6 md:px-20 py-24 md:py-48">
+                        <div className="flex flex-col md:flex-row justify-between items-center mb-24 md:mb-40 gap-8 border-b border-zinc-900 pb-12">
+                            <div className="w-full md:w-auto overflow-x-auto no-scrollbar flex space-x-10 md:space-x-16 scroll-smooth">
+                                {CATEGORIES.map(cat => (
+                                    <button 
+                                        key={cat} 
+                                        onClick={() => setActiveCat(cat)} 
+                                        className={`luxury-text text-xs md:text-sm whitespace-nowrap transition-all duration-500 ${activeCat === cat ? 'text-white' : 'text-zinc-800 hover:text-zinc-400'}`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="luxury-text text-[10px] text-zinc-900 hidden md:block">[{products.length} ARTICLES]</p>
+                        </div>
 
-            const addToCart = (p) => {
-                setCart(prev => {
-                    const ex = prev.find(i => i.id === p.id);
-                    if (ex) return prev.map(i => i.id === p.id ? {...i, qty: i.qty + 1} : i);
-                    return [...prev, { ...p, qty: 1 }];
-                });
-                setIsCartOpen(true);
-            };
+                        {loading ? <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-2 border-white/10 border-t-white rounded-full animate-spin"></div></div> : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-24 md:gap-y-40">
+                                {products.map((p) => (
+                                    <div key={p.id} className="group">
+                                        <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0a]">
+                                            <img src={p.imageUrl} className="w-full h-full object-cover grayscale brightness-100 transition-all duration-1000 group-hover:scale-105 group-hover:grayscale-0" />
+                                            <div className="absolute inset-0 bg-black/80 hover-reveal flex flex-col items-center justify-center p-10 text-center">
+                                                <p className="luxury-text text-2xl mb-10 text-white text-glow">{CURRENCY}{p.price.toLocaleString()}</p>
+                                                <div className="flex flex-col w-full space-y-4">
+                                                    <button onClick={() => addToCart(p)} className="luxury-text text-[10px] border border-white/40 px-8 py-4 hover:bg-white hover:text-black transition-all">BAG PIECE</button>
+                                                    <button onClick={() => handleDirectOrder(p)} className="luxury-text text-[9px] text-zinc-500 hover:text-white underline underline-offset-4">WHATSAPP ORDER</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-8 text-center">
+                                            <h3 className="luxury-text text-[11px] text-white text-glow mb-2">{p.name}</h3>
+                                            <p className="luxury-text text-[9px] text-zinc-800">{p.category}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
 
-            const filtered = activeCat === 'ALL' ? products : products.filter(p => p.category === activeCat);
-            const cartTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+        const Footer = () => (
+            <footer className="bg-black text-white pt-32 pb-16 px-6 border-t border-zinc-900">
+                <div className="max-w-7xl mx-auto space-y-20">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-center md:text-left">
+                        <div className="space-y-6">
+                            <h4 className="luxury-text text-xl tracking-[0.8em]">BBOX</h4>
+                            <p className="text-[9px] text-zinc-700 luxury-text leading-relaxed max-w-xs mx-auto md:mx-0">High-End Minimalist Archives. Crafted for Excellence.</p>
+                        </div>
+                        <div className="hidden md:block">
+                            <h5 className="luxury-text text-[10px] text-zinc-800 mb-8">Navigation</h5>
+                            <ul className="text-[9px] text-zinc-600 space-y-4 luxury-text">
+                                {CATEGORIES.map(c => <li key={c} className="hover:text-white transition-colors cursor-pointer">{c}</li>)}
+                            </ul>
+                        </div>
+                        <div className="space-y-8">
+                            <h5 className="luxury-text text-[10px] text-zinc-800 mb-8">Contact HQ</h5>
+                            <p className="text-[9px] text-zinc-600 luxury-text">+92 335 8211166</p>
+                        </div>
+                    </div>
+                    <div className="pt-10 border-t border-zinc-950 flex flex-col md:flex-row justify-between items-center text-[8px] text-zinc-900 luxury-text">
+                        <p>&copy; 2024 BBOX BRAND INT.</p>
+                        <div className="flex space-x-10 mt-4 md:mt-0"><span>PRIVACY</span><span>TERMS</span></div>
+                    </div>
+                </div>
+            </footer>
+        );
 
-            if (isPreloading) return (
-                <div className="h-screen w-full flex items-center justify-center bg-[#000000] fixed inset-0 z-[1000]">
-                    <div className="flex flex-col items-center space-y-8">
-                        <EagleLogo className="w-16 h-16 text-white opacity-20 animate-pulse" />
-                        <p className="luxury-text text-[9px] animate-pulse text-white tracking-[1.5em] opacity-40">BBOX ARCHIVE</p>
-                    </div>
-                </div>
-            );
+        // --- MAIN APP ---
+        const App = () => {
+            const [products, setProducts] = useState([]);
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [activeCat, setActiveCat] = useState('ALL');
+            const [loading, setLoading] = useState(true);
+            const [isPreloading, setIsPreloading] = useState(true);
+            const [hasInteracted, setHasInteracted] = useState(false);
+            const [isMuted, setIsMuted] = useState(false);
+            const audioRef = useRef(null);
 
-            return (
-                <div className="min-h-screen bg-[#000000]">
-                    <Navbar cartCount={cart.reduce((a, c) => a + c.qty, 0)} onCartOpen={() => setIsCartOpen(true)} />
-                    <Cart 
-                        isOpen={isCartOpen} setIsOpen={setIsCartOpen} cart={cart} config={config}
-                        removeFromCart={id => setCart(prev => prev.filter(i => i.id !== id))} 
-                        updateQty={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, qty: Math.max(1, i.qty+d)} : i))} 
-                        total={cartTotal} 
-                    />
-                    <StoreView products={filtered} activeCat={activeCat} setActiveCat={setActiveCat} addToCart={addToCart} loading={loading} config={config} />
-                    <Footer config={config} />
-                </div>
-            );
-        };
+            useEffect(() => {
+                const timer = setTimeout(() => setIsPreloading(false), 2000);
+                return () => clearTimeout(timer);
+            }, []);
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+            useEffect(() => {
+                const handleStartMedia = () => {
+                    if (!hasInteracted && audioRef.current) {
+                        audioRef.current.volume = 0.2;
+                        audioRef.current.play().catch(e => console.log(e));
+                        setHasInteracted(true);
+                    }
+                };
+                window.addEventListener('click', handleStartMedia);
+                window.addEventListener('touchstart', handleStartMedia);
+                window.addEventListener('scroll', handleStartMedia);
+                return () => {
+                    window.removeEventListener('click', handleStartMedia);
+                    window.removeEventListener('touchstart', handleStartMedia);
+                    window.removeEventListener('scroll', handleStartMedia);
+                };
+            }, [hasInteracted]);
+
+            useEffect(() => {
+                const unsubscribe = db.collection('products').orderBy('createdAt', 'desc')
+                    .onSnapshot(snapshot => {
+                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setProducts(data.length ? data : MOCK_PRODUCTS);
+                        setLoading(false);
+                    }, () => {
+                        setProducts(MOCK_PRODUCTS);
+                        setLoading(false);
+                    });
+                return () => unsubscribe();
+            }, []);
+
+            const addToCart = (p) => {
+                setCart(prev => {
+                    const ex = prev.find(i => i.id === p.id);
+                    if (ex) return prev.map(i => i.id === p.id ? {...i, qty: i.qty + 1} : i);
+                    return [...prev, { ...p, qty: 1 }];
+                });
+                setIsCartOpen(true);
+            };
+
+            const toggleMute = () => {
+                if (audioRef.current) {
+                    audioRef.current.muted = !isMuted;
+                    setIsMuted(!isMuted);
+                }
+            };
+
+            const cartTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            const filtered = activeCat === 'ALL' ? products : products.filter(p => p.category === activeCat);
+
+            return (
+                <div className="min-h-screen bg-[#050505]">
+                    <audio ref={audioRef} loop src="https://assets.mixkit.co/music/preview/mixkit-mysterious-drone-ambience-772.mp3" preload="auto"></audio>
+
+                    {isPreloading ? (
+                        <div className="h-screen w-full flex items-center justify-center bg-[#050505] fixed inset-0 z-[1000]">
+                            <p className="luxury-text text-sm md:text-xl animate-pulse text-white text-glow">BBOX ARCHIVE LOADING...</p>
+                        </div>
+                    ) : (
+                        <div className="reveal-zoom">
+                            <Navbar 
+                                cartCount={cart.reduce((a, c) => a + c.qty, 0)} 
+                                onCartOpen={() => setIsCartOpen(true)}
+                                isMuted={isMuted}
+                                onToggleMute={toggleMute}
+                            />
+                            <Cart 
+                                isOpen={isCartOpen} 
+                                setIsOpen={setIsCartOpen} 
+                                cart={cart} 
+                                removeFromCart={id => setCart(prev => prev.filter(i => i.id !== id))} 
+                                updateQty={(id, d) => setCart(prev => prev.map(i => i.id === id ? {...i, qty: Math.max(1, i.qty+d)} : i))} 
+                                total={cartTotal} 
+                            />
+                            <StoreView 
+                                products={filtered} 
+                                activeCat={activeCat} 
+                                setActiveCat={setActiveCat} 
+                                addToCart={addToCart} 
+                                loading={loading} 
+                            />
+                            <Footer />
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
