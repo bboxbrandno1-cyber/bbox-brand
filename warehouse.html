@@ -28,35 +28,41 @@
             color: var(--zinc);
             margin: 0;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
         .luxury-text {
             text-transform: uppercase;
-            letter-spacing: 0.4em;
+            letter-spacing: 0.5em;
             font-weight: 900;
         }
         .input-dark {
             background: #080808;
             border: 1px solid #1a1a1a;
             color: white;
-            padding: 12px;
+            padding: 16px;
             width: 100%;
             outline: none;
-            transition: border 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 11px;
+            letter-spacing: 0.2em;
         }
         .input-dark:focus {
-            border-color: #444;
+            border-color: #ffffff;
+            background: #111;
         }
         .btn-premium {
             background: white;
             color: black;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            padding: 14px;
-            transition: opacity 0.3s ease;
+            letter-spacing: 0.3em;
+            padding: 18px;
+            transition: all 0.5s ease;
+            font-size: 10px;
         }
         .btn-premium:hover {
-            opacity: 0.8;
+            background: #cccccc;
+            transform: translateY(-2px);
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -67,11 +73,17 @@
             100% { opacity: 0.4; }
         }
         .live-indicator {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #ff0000;
             border-radius: 50%;
             animation: pulse-red 2s infinite;
+        }
+
+        .card-blur {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
 </head>
@@ -81,7 +93,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- FIREBASE CONFIG ---
+        // --- FIREBASE CONFIG (Synced with index.html) ---
         const firebaseConfig = {
             apiKey: "AIzaSyCMSAjTaf9FK2YTgfFpt8kXC4XClAoHHdw",
             authDomain: "bboxbrand-b7f60.firebaseapp.com",
@@ -95,56 +107,84 @@
         const db = firebase.firestore();
 
         const triggerHaptic = () => {
-            if ("vibrate" in navigator) navigator.vibrate(25);
+            if ("vibrate" in navigator) navigator.vibrate(20);
         };
+
+        const OWNER_WHATSAPP = "923358211166";
+        const DEFAULT_PASS = "Haseebshah@2026";
 
         // --- COMPONENTS ---
 
-        const Login = ({ onLogin }) => {
+        const Login = ({ onLogin, config }) => {
             const [pass, setPass] = useState('');
+            const storedPassword = config.adminPassword || DEFAULT_PASS;
+
             const handleSubmit = (e) => {
                 e.preventDefault();
-                if (pass === 'BBOX2024') { // Master Password
+                if (pass === storedPassword) {
                     triggerHaptic();
                     onLogin();
                 } else {
-                    alert('ACCESS DENIED');
+                    alert('ACCESS DENIED: SYSTEM LOCKDOWN INITIATED');
                 }
             };
+
+            const handleForgetPassword = () => {
+                triggerHaptic();
+                const msg = encodeURIComponent("Assalam-o-Alaikum, I am BBOX Admin. Requesting a 'Reset Password' link for the Warehouse Terminal.");
+                window.open(`https://wa.me/${OWNER_WHATSAPP}?text=${msg}`, '_blank');
+            };
+
             return (
                 <div className="h-screen flex items-center justify-center bg-black px-6">
-                    <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-8">
-                        <div className="text-center space-y-4">
-                            <h1 className="luxury-text text-xl">WAREHOUSE HQ</h1>
-                            <p className="luxury-text text-[8px] opacity-30 tracking-[0.8em]">ADMINISTRATIVE TERMINAL</p>
+                    <div className="max-w-sm w-full space-y-16">
+                        <div className="text-center space-y-6">
+                            <h1 className="luxury-text text-3xl tracking-[1.2em]">BBOX</h1>
+                            <p className="luxury-text text-[9px] opacity-30 tracking-[1em]">WAREHOUSE ACCESS CONTROL</p>
                         </div>
-                        <input 
-                            type="password" 
-                            className="input-dark text-center tracking-[1em] text-xl" 
-                            placeholder="••••••••"
-                            value={pass}
-                            onChange={e => setPass(e.target.value)}
-                        />
-                        <button className="w-full btn-premium text-[10px]">AUTHENTICATE</button>
-                    </form>
+
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="space-y-4">
+                                <input 
+                                    type="password" 
+                                    className="input-dark text-center tracking-[1.5em] text-2xl" 
+                                    placeholder="••••••••"
+                                    value={pass}
+                                    onChange={e => setPass(e.target.value)}
+                                    autoFocus
+                                />
+                                <button className="w-full btn-premium">AUTHORIZE ENTRY</button>
+                            </div>
+                            
+                            <div className="flex justify-center pt-10">
+                                <button 
+                                    type="button" 
+                                    onClick={handleForgetPassword}
+                                    className="luxury-text text-[9px] opacity-20 hover:opacity-100 transition-all border-b border-transparent hover:border-zinc-800 pb-1"
+                                >
+                                    FORGET ACCESS CODE?
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             );
         };
 
-        const Dashboard = () => {
+        const Dashboard = ({ config }) => {
             const [products, setProducts] = useState([]);
-            const [config, setConfig] = useState({ categories: [], whatsapp: '923358211166', message: 'Assalam-o-Alaikum BBOX, I want to order' });
-            const [activeTab, setActiveTab] = useState('PRODUCTS');
+            const [liveConfig, setLiveConfig] = useState(config);
+            const [activeTab, setActiveTab] = useState('ARCHIVE');
             
-            // Product Form
+            // Product Form State
             const [pName, setPName] = useState('');
             const [pPrice, setPPrice] = useState('');
             const [pImg, setPImg] = useState('');
             const [pStock, setPStock] = useState('10');
             const [pCat, setPCat] = useState('');
             const [editId, setEditId] = useState(null);
-
-            // Category Form
+            
+            // Category State
             const [newCat, setNewCat] = useState('');
 
             useEffect(() => {
@@ -152,7 +192,7 @@
                     setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 });
                 const unsubConfig = db.collection('config').doc('main').onSnapshot(doc => {
-                    if (doc.exists) setConfig(doc.data());
+                    if (doc.exists) setLiveConfig(doc.data());
                 });
                 return () => { unsubProducts(); unsubConfig(); };
             }, []);
@@ -166,17 +206,19 @@
                 e.preventDefault();
                 triggerHaptic();
                 const data = {
-                    name: pName,
+                    name: pName.toUpperCase(),
                     price: Number(pPrice),
                     imageUrl: pImg,
                     stock: Number(pStock),
-                    category: pCat || config.categories[0],
+                    category: pCat || (liveConfig.categories && liveConfig.categories[0]) || 'GENERAL',
                     createdAt: editId ? undefined : firebase.firestore.FieldValue.serverTimestamp()
                 };
                 if (editId) {
                     await db.collection('products').doc(editId).update(data);
+                    alert('ARTICLE UPDATED');
                 } else {
                     await db.collection('products').add(data);
+                    alert('NEW ARTICLE DEPLOYED');
                 }
                 resetForm();
             };
@@ -186,7 +228,7 @@
             };
 
             const deleteProduct = async (id) => {
-                if (confirm('DELETE THIS ARTICLE?')) {
+                if (confirm('PERMANENTLY REMOVE THIS ARTICLE FROM ARCHIVE?')) {
                     triggerHaptic();
                     await db.collection('products').doc(id).delete();
                 }
@@ -195,85 +237,90 @@
             const addCategory = () => {
                 if (!newCat) return;
                 triggerHaptic();
-                const updated = [...config.categories, newCat.toUpperCase()];
-                saveConfig({ ...config, categories: updated });
+                const updated = [...(liveConfig.categories || []), newCat.toUpperCase()];
+                saveConfig({ ...liveConfig, categories: [...new Set(updated)] });
                 setNewCat('');
             };
 
             const removeCategory = (cat) => {
-                triggerHaptic();
-                const updated = config.categories.filter(c => c !== cat);
-                saveConfig({ ...config, categories: updated });
+                if (confirm(`REMOVE ${cat} CATEGORY?`)) {
+                    triggerHaptic();
+                    const updated = (liveConfig.categories || []).filter(c => c !== cat);
+                    saveConfig({ ...liveConfig, categories: updated });
+                }
             };
 
             return (
                 <div className="min-h-screen bg-black text-white">
-                    <header className="border-b border-white/5 p-8 flex justify-between items-center sticky top-0 bg-black z-50">
-                        <div className="flex items-center space-x-4">
+                    {/* Header */}
+                    <header className="border-b border-white/5 p-6 md:p-10 flex flex-col md:flex-row justify-between items-center sticky top-0 bg-black z-50 gap-6">
+                        <div className="flex items-center space-x-6">
                             <div className="live-indicator"></div>
-                            <h1 className="luxury-text text-sm">BBOX WAREHOUSE</h1>
+                            <h1 className="luxury-text text-xs md:text-sm tracking-[1em]">BBOX WAREHOUSE</h1>
                         </div>
-                        <div className="flex space-x-8">
-                            <button onClick={() => setActiveTab('PRODUCTS')} className={`luxury-text text-[9px] ${activeTab === 'PRODUCTS' ? 'opacity-100' : 'opacity-30'}`}>ARCHIVE</button>
-                            <button onClick={() => setActiveTab('CONFIG')} className={`luxury-text text-[9px] ${activeTab === 'CONFIG' ? 'opacity-100' : 'opacity-30'}`}>SETTINGS</button>
+                        <div className="flex space-x-10">
+                            <button onClick={() => setActiveTab('ARCHIVE')} className={`luxury-text text-[10px] tracking-[0.6em] transition-all ${activeTab === 'ARCHIVE' ? 'text-white border-b border-white pb-2' : 'opacity-20 hover:opacity-100'}`}>INVENTORY</button>
+                            <button onClick={() => setActiveTab('CONTROL')} className={`luxury-text text-[10px] tracking-[0.6em] transition-all ${activeTab === 'CONTROL' ? 'text-white border-b border-white pb-2' : 'opacity-20 hover:opacity-100'}`}>CONTROL</button>
                         </div>
                     </header>
 
-                    <main className="max-w-6xl mx-auto p-8">
-                        {activeTab === 'PRODUCTS' ? (
-                            <div className="grid lg:grid-cols-3 gap-16">
-                                {/* Form */}
-                                <div className="space-y-10">
-                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">{editId ? 'MODIFY' : 'DEPLOY'} ARTICLE</h2>
+                    <main className="max-w-[1400px] mx-auto p-6 md:p-20">
+                        {activeTab === 'ARCHIVE' ? (
+                            <div className="grid lg:grid-cols-12 gap-16 md:gap-24">
+                                {/* Form Side */}
+                                <div className="lg:col-span-4 space-y-12">
+                                    <h2 className="luxury-text text-xs opacity-40 border-b border-white/5 pb-6">DEPLOY ARTICLE</h2>
                                     <form onSubmit={saveProduct} className="space-y-6">
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Article Name</p>
-                                            <input className="input-dark" value={pName} onChange={e => setPName(e.target.value)} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Price (PKR)</p>
-                                            <input type="number" className="input-dark" value={pPrice} onChange={e => setPPrice(e.target.value)} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Stock Quantity (0 = Sold Out)</p>
-                                            <input type="number" className="input-dark" value={pStock} onChange={e => setPStock(e.target.value)} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Category</p>
-                                            <select className="input-dark appearance-none" value={pCat} onChange={e => setPCat(e.target.value)}>
-                                                {config.categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                        <div className="space-y-4">
+                                            <input className="input-dark" placeholder="ARTICLE NAME" value={pName} onChange={e => setPName(e.target.value)} required />
+                                            <input type="number" className="input-dark" placeholder="PRICE (PKR)" value={pPrice} onChange={e => setPPrice(e.target.value)} required />
+                                            <input type="number" className="input-dark" placeholder="STOCK COUNT" value={pStock} onChange={e => setPStock(e.target.value)} required />
+                                            <select className="input-dark appearance-none" value={pCat} onChange={e => setPCat(e.target.value)} required>
+                                                <option value="">SELECT CATEGORY</option>
+                                                {(liveConfig.categories || ['SHOES', 'HOODIES', 'TEES']).map(c => <option key={c} value={c}>{c}</option>)}
                                             </select>
+                                            <input className="input-dark" placeholder="IMAGE URL (UNSPLASH/IMGBB)" value={pImg} onChange={e => setPImg(e.target.value)} required />
                                         </div>
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Image URL</p>
-                                            <input className="input-dark" value={pImg} onChange={e => setPImg(e.target.value)} required />
-                                        </div>
-                                        <button className="w-full btn-premium text-[10px] mt-4">{editId ? 'COMMIT CHANGES' : 'DEPLOY TO MAIN'}</button>
-                                        {editId && <button type="button" onClick={resetForm} className="w-full luxury-text text-[8px] opacity-40 mt-2">Cancel Edit</button>}
+                                        <button className="w-full btn-premium">{editId ? 'UPDATE ARCHIVE' : 'DEPLOY ARTICLE'}</button>
+                                        {editId && (
+                                            <button type="button" onClick={resetForm} className="w-full luxury-text text-[8px] opacity-40 hover:opacity-100 transition-all pt-4">EXIT EDIT MODE</button>
+                                        )}
                                     </form>
                                 </div>
 
-                                {/* List */}
-                                <div className="lg:col-span-2 space-y-10">
-                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">LIVE INVENTORY [{products.length}]</h2>
-                                    <div className="space-y-6">
-                                        {products.map(p => (
-                                            <div key={p.id} className="flex space-x-6 bg-white/5 p-4 border border-white/5 items-center">
-                                                <img src={p.imageUrl} className="w-20 h-24 object-cover grayscale" />
-                                                <div className="flex-1 space-y-1">
-                                                    <p className="luxury-text text-[8px] opacity-40">{p.category}</p>
-                                                    <h3 className="luxury-text text-[10px]">{p.name}</h3>
-                                                    <p className="luxury-text text-[10px] opacity-60">Rs.{p.price.toLocaleString()}</p>
-                                                    <div className="flex items-center space-x-2">
-                                                        <div className={`w-2 h-2 rounded-full ${p.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                                        <span className="text-[10px] font-bold">{p.stock > 0 ? `IN STOCK (${p.stock})` : 'SOLD OUT'}</span>
+                                {/* List Side */}
+                                <div className="lg:col-span-8 space-y-12">
+                                    <div className="flex justify-between items-end border-b border-white/5 pb-6">
+                                        <h2 className="luxury-text text-xs opacity-40">LIVE ARCHIVE</h2>
+                                        <p className="luxury-text text-[9px] opacity-20">{products.length} ARTICLES REGISTERED</p>
+                                    </div>
+                                    <div className="grid gap-6">
+                                        {products.length === 0 ? (
+                                            <p className="luxury-text text-[10px] text-center py-20 opacity-10">NO DATA FOUND</p>
+                                        ) : products.map(p => (
+                                            <div key={p.id} className="card-blur p-6 flex items-center group transition-all duration-700 hover:bg-white/5">
+                                                <div className="w-16 h-20 bg-zinc-900 mr-8 overflow-hidden">
+                                                    <img src={p.imageUrl} className="w-full h-full object-cover grayscale opacity-60 group-hover:opacity-100 transition-all" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center space-x-4 mb-1">
+                                                        <h3 className="luxury-text text-[11px]">{p.name}</h3>
+                                                        <span className="text-[8px] opacity-20 luxury-text">[{p.category}]</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-6">
+                                                        <p className="luxury-text text-[9px] opacity-40">PKR {p.price.toLocaleString()}</p>
+                                                        <p className={`luxury-text text-[8px] font-black ${p.stock > 0 ? 'text-zinc-500' : 'text-red-600'}`}>
+                                                            {p.stock > 0 ? `QTY: ${p.stock}` : 'OUT OF STOCK'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col space-y-3">
+                                                <div className="flex space-x-8">
                                                     <button onClick={() => {
+                                                        triggerHaptic();
                                                         setEditId(p.id); setPName(p.name); setPPrice(p.price); setPImg(p.imageUrl); setPStock(p.stock); setPCat(p.category);
-                                                    }} className="luxury-text text-[8px] hover:text-white opacity-40">EDIT</button>
-                                                    <button onClick={() => deleteProduct(p.id)} className="luxury-text text-[8px] text-red-500 opacity-60">REMOVE</button>
+                                                        window.scrollTo({top: 0, behavior: 'smooth'});
+                                                    }} className="luxury-text text-[9px] opacity-30 hover:opacity-100 hover:text-white transition-all">EDIT</button>
+                                                    <button onClick={() => deleteProduct(p.id)} className="luxury-text text-[9px] opacity-30 hover:opacity-100 hover:text-red-500 transition-all">DELETE</button>
                                                 </div>
                                             </div>
                                         ))}
@@ -281,38 +328,45 @@
                                 </div>
                             </div>
                         ) : (
-                            <div className="max-w-2xl mx-auto space-y-20">
-                                {/* WhatsApp Config */}
-                                <section className="space-y-8">
-                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">COMMUNICATION SETTINGS</h2>
+                            <div className="max-w-2xl mx-auto space-y-24">
+                                {/* WhatsApp Settings */}
+                                <section className="space-y-10">
+                                    <h2 className="luxury-text text-xs opacity-40 border-b border-white/5 pb-6">SYSTEM CORE</h2>
                                     <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Master WhatsApp Number</p>
-                                            <input className="input-dark" value={config.whatsapp} onChange={e => setConfig({...config, whatsapp: e.target.value})} onBlur={() => saveConfig(config)} />
+                                        <div>
+                                            <label className="luxury-text text-[8px] opacity-30 mb-2 block">HQ WHATSAPP</label>
+                                            <input className="input-dark" placeholder="92..." value={liveConfig.whatsapp} onChange={e => setLiveConfig({...liveConfig, whatsapp: e.target.value})} onBlur={() => saveConfig(liveConfig)} />
                                         </div>
-                                        <div className="space-y-2">
-                                            <p className="luxury-text text-[8px] opacity-40">Automated Prefix Message</p>
-                                            <textarea className="input-dark h-24" value={config.message} onChange={e => setConfig({...config, message: e.target.value})} onBlur={() => saveConfig(config)} />
+                                        <div>
+                                            <label className="luxury-text text-[8px] opacity-30 mb-2 block">AUTO ORDER MESSAGE</label>
+                                            <textarea className="input-dark h-24" placeholder="AUTO MESSAGE" value={liveConfig.message} onChange={e => setLiveConfig({...liveConfig, message: e.target.value})} onBlur={() => saveConfig(liveConfig)} />
                                         </div>
                                     </div>
                                 </section>
 
-                                {/* Categories Config */}
-                                <section className="space-y-8">
-                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">CATEGORY ARCHITECTURE</h2>
-                                    <div className="space-y-6">
-                                        <div className="flex space-x-4">
-                                            <input className="input-dark" placeholder="NEW CATEGORY NAME" value={newCat} onChange={e => setNewCat(e.target.value)} />
-                                            <button onClick={addCategory} className="btn-premium px-10 text-[9px]">ADD</button>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {config.categories.map(c => (
-                                                <div key={c} className="bg-white/5 border border-white/10 p-4 flex justify-between items-center">
-                                                    <span className="luxury-text text-[9px]">{c}</span>
-                                                    <button onClick={() => removeCategory(c)} className="text-red-500 text-sm">×</button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                {/* Category Control */}
+                                <section className="space-y-10">
+                                    <h2 className="luxury-text text-xs opacity-40 border-b border-white/5 pb-6">CATEGORY MANAGEMENT</h2>
+                                    <div className="flex space-x-4">
+                                        <input className="input-dark" placeholder="NEW CATEGORY NAME (e.g. SHOES)" value={newCat} onChange={e => setNewCat(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addCategory()} />
+                                        <button onClick={addCategory} className="btn-premium px-12 text-[10px]">ADD</button>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                        {(liveConfig.categories || ['SHOES', 'HOODIES', 'TEES']).map(c => (
+                                            <div key={c} className="card-blur p-5 flex justify-between items-center group">
+                                                <span className="luxury-text text-[10px] opacity-50">{c}</span>
+                                                <button onClick={() => removeCategory(c)} className="text-zinc-800 hover:text-red-500 transition-all text-xl">&times;</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {/* Security Update */}
+                                <section className="space-y-10 pt-10 border-t border-white/5">
+                                    <h2 className="luxury-text text-xs opacity-40 pb-6 text-red-600">SECURITY PROTOCOL</h2>
+                                    <div className="card-blur p-8 space-y-6">
+                                        <p className="luxury-text text-[8px] opacity-30 leading-relaxed">System password can only be updated by the Root Administrator. If you need to change your access code, please contact HQ directly.</p>
+                                        <button onClick={() => window.open(`https://wa.me/${OWNER_WHATSAPP}?text=I%20want%20to%20change%20BBOX%20Warehouse%20Password`, '_blank')} className="luxury-text text-[9px] text-zinc-600 hover:text-white transition-all underline underline-offset-8">REQUEST PASSWORD CHANGE</button>
                                     </div>
                                 </section>
                             </div>
@@ -324,7 +378,19 @@
 
         const Root = () => {
             const [isAuthed, setIsAuthed] = useState(false);
-            return isAuthed ? <Dashboard /> : <Login onLogin={() => setIsAuthed(true)} />;
+            const [config, setConfig] = useState(null);
+
+            useEffect(() => {
+                const unsub = db.collection('config').doc('main').onSnapshot(doc => {
+                    if (doc.exists) setConfig(doc.data());
+                    else setConfig({ categories: ['SHOES', 'HOODIES', 'TEES'], whatsapp: OWNER_WHATSAPP });
+                });
+                return () => unsub();
+            }, []);
+
+            if (!config) return <div className="h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border border-white/10 border-t-white animate-spin rounded-full"></div></div>;
+
+            return isAuthed ? <Dashboard config={config} /> : <Login onLogin={() => setIsAuthed(true)} config={config} />;
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
