@@ -2,94 +2,333 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BBOX | CLOUD CONTROL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBOX | WAREHOUSE TERMINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 p-6">
-    <div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <h2 class="text-3xl font-black mb-8 text-center uppercase tracking-tighter">BBOX WAREHOUSE</h2>
-        <div class="space-y-4">
-            <input type="file" id="imageInput" class="w-full border-2 border-dashed rounded-lg p-4 bg-gray-50 cursor-pointer">
-            <input type="text" id="name" placeholder="Product Name" class="w-full border p-4 rounded-lg outline-none">
-            <input type="number" id="price" placeholder="Price (Rs.)" class="w-full border p-4 rounded-lg outline-none">
-            <select id="category" class="w-full border p-4 rounded-lg bg-white">
-                <option>T-SHIRTS</option>
-                <option>TRACK SUITS</option>
-                <option>HOODIES</option>
-            </select>
-            <button onclick="publishToStore()" id="btn" class="w-full bg-black text-white py-5 rounded-lg font-bold uppercase tracking-widest hover:bg-zinc-800 transition-all">
-                Publish From Gallery
-            </button>
-        </div>
-        <div id="status" class="mt-4 text-center text-xs text-gray-400">System: Secure GitHub Mode</div>
-    </div>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Dependencies -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <script>
-        const IMGBB_KEY = "6e7d18cc7275f1ed12b62b19d6e95233"; 
-        const REPO = "bboxbrandno1-cyber/bbox-brand";
-
-        async function publishToStore() {
-            // Har baar upload par ye aapse token mangega
-            const GH_TOKEN = prompt("Meharbani karke apna GitHub Token yahan paste karein:");
-            if(!GH_TOKEN) return alert("Token ke bagair upload nahi ho sakta!");
-
-            const btn = document.getElementById('btn');
-            const file = document.getElementById('imageInput').files[0];
-            const name = document.getElementById('name').value;
-            const price = document.getElementById('price').value;
-            const category = document.getElementById('category').value;
-
-            if(!file || !name || !price) return alert("Pura data bharein!");
-
-            btn.innerText = "UPLOADING...";
-            btn.disabled = true;
-
-            try {
-                // 1. Upload to ImgBB
-                const fd = new FormData();
-                fd.append("image", file);
-                const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-                const imgData = await imgRes.json();
-                const imageUrl = imgData.data.url;
-
-                // 2. Fetch products.json from GitHub
-                const ghUrl = `https://api.github.com/repos/${REPO}/contents/products.json`;
-                const resFetch = await fetch(ghUrl, { headers: { Authorization: `token ${GH_TOKEN}` } });
-                
-                if(resFetch.status === 401) throw new Error("Ghalat Token!");
-                
-                const fileData = await resFetch.json();
-                const products = JSON.parse(atob(fileData.content));
-
-                // 3. Add New Product
-                const newProduct = { id: Date.now(), name, price, category, imageUrl, date: new Date().toLocaleDateString() };
-                products.unshift(newProduct);
-
-                // 4. Save Back to GitHub
-                const resPut = await fetch(ghUrl, {
-                    method: "PUT",
-                    headers: { Authorization: `token ${GH_TOKEN}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        message: `Added: ${name}`,
-                        content: btoa(JSON.stringify(products, null, 2)),
-                        sha: fileData.sha
-                    })
-                });
-
-                if(resPut.ok) {
-                    alert("Zabardast! Product website par live ho gaya hai.");
-                    location.reload();
-                } else {
-                    alert("Kuch masla hai, shayad token block ho gaya.");
-                }
-
-            } catch (e) {
-                alert("Error: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Publish From Gallery";
-            }
+    <style>
+        :root {
+            --obsidian: #000000;
+            --zinc: #ffffff;
+            --accent: #111111;
         }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--obsidian);
+            color: var(--zinc);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .luxury-text {
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            font-weight: 900;
+        }
+        .input-dark {
+            background: #080808;
+            border: 1px solid #1a1a1a;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+        .input-dark:focus {
+            border-color: #444;
+        }
+        .btn-premium {
+            background: white;
+            color: black;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 14px;
+            transition: opacity 0.3s ease;
+        }
+        .btn-premium:hover {
+            opacity: 0.8;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes pulse-red {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        .live-indicator {
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: pulse-red 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMSAjTaf9FK2YTgfFpt8kXC4XClAoHHdw",
+            authDomain: "bboxbrand-b7f60.firebaseapp.com",
+            projectId: "bboxbrand-b7f60",
+            storageBucket: "bboxbrand-b7f60.firebasestorage.app",
+            messagingSenderId: "678435815084",
+            appId: "1:678435815084:web:dd52ee29b19adea3146989"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const triggerHaptic = () => {
+            if ("vibrate" in navigator) navigator.vibrate(25);
+        };
+
+        // --- COMPONENTS ---
+
+        const Login = ({ onLogin }) => {
+            const [pass, setPass] = useState('');
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (pass === 'BBOX2024') { // Master Password
+                    triggerHaptic();
+                    onLogin();
+                } else {
+                    alert('ACCESS DENIED');
+                }
+            };
+            return (
+                <div className="h-screen flex items-center justify-center bg-black px-6">
+                    <form onSubmit={handleSubmit} className="max-w-sm w-full space-y-8">
+                        <div className="text-center space-y-4">
+                            <h1 className="luxury-text text-xl">WAREHOUSE HQ</h1>
+                            <p className="luxury-text text-[8px] opacity-30 tracking-[0.8em]">ADMINISTRATIVE TERMINAL</p>
+                        </div>
+                        <input 
+                            type="password" 
+                            className="input-dark text-center tracking-[1em] text-xl" 
+                            placeholder="••••••••"
+                            value={pass}
+                            onChange={e => setPass(e.target.value)}
+                        />
+                        <button className="w-full btn-premium text-[10px]">AUTHENTICATE</button>
+                    </form>
+                </div>
+            );
+        };
+
+        const Dashboard = () => {
+            const [products, setProducts] = useState([]);
+            const [config, setConfig] = useState({ categories: [], whatsapp: '923358211166', message: 'Assalam-o-Alaikum BBOX, I want to order' });
+            const [activeTab, setActiveTab] = useState('PRODUCTS');
+            
+            // Product Form
+            const [pName, setPName] = useState('');
+            const [pPrice, setPPrice] = useState('');
+            const [pImg, setPImg] = useState('');
+            const [pStock, setPStock] = useState('10');
+            const [pCat, setPCat] = useState('');
+            const [editId, setEditId] = useState(null);
+
+            // Category Form
+            const [newCat, setNewCat] = useState('');
+
+            useEffect(() => {
+                const unsubProducts = db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                    setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                });
+                const unsubConfig = db.collection('config').doc('main').onSnapshot(doc => {
+                    if (doc.exists) setConfig(doc.data());
+                });
+                return () => { unsubProducts(); unsubConfig(); };
+            }, []);
+
+            const saveConfig = async (newConfig) => {
+                triggerHaptic();
+                await db.collection('config').doc('main').set(newConfig, { merge: true });
+            };
+
+            const saveProduct = async (e) => {
+                e.preventDefault();
+                triggerHaptic();
+                const data = {
+                    name: pName,
+                    price: Number(pPrice),
+                    imageUrl: pImg,
+                    stock: Number(pStock),
+                    category: pCat || config.categories[0],
+                    createdAt: editId ? undefined : firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (editId) {
+                    await db.collection('products').doc(editId).update(data);
+                } else {
+                    await db.collection('products').add(data);
+                }
+                resetForm();
+            };
+
+            const resetForm = () => {
+                setPName(''); setPPrice(''); setPImg(''); setPStock('10'); setPCat(''); setEditId(null);
+            };
+
+            const deleteProduct = async (id) => {
+                if (confirm('DELETE THIS ARTICLE?')) {
+                    triggerHaptic();
+                    await db.collection('products').doc(id).delete();
+                }
+            };
+
+            const addCategory = () => {
+                if (!newCat) return;
+                triggerHaptic();
+                const updated = [...config.categories, newCat.toUpperCase()];
+                saveConfig({ ...config, categories: updated });
+                setNewCat('');
+            };
+
+            const removeCategory = (cat) => {
+                triggerHaptic();
+                const updated = config.categories.filter(c => c !== cat);
+                saveConfig({ ...config, categories: updated });
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-white">
+                    <header className="border-b border-white/5 p-8 flex justify-between items-center sticky top-0 bg-black z-50">
+                        <div className="flex items-center space-x-4">
+                            <div className="live-indicator"></div>
+                            <h1 className="luxury-text text-sm">BBOX WAREHOUSE</h1>
+                        </div>
+                        <div className="flex space-x-8">
+                            <button onClick={() => setActiveTab('PRODUCTS')} className={`luxury-text text-[9px] ${activeTab === 'PRODUCTS' ? 'opacity-100' : 'opacity-30'}`}>ARCHIVE</button>
+                            <button onClick={() => setActiveTab('CONFIG')} className={`luxury-text text-[9px] ${activeTab === 'CONFIG' ? 'opacity-100' : 'opacity-30'}`}>SETTINGS</button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto p-8">
+                        {activeTab === 'PRODUCTS' ? (
+                            <div className="grid lg:grid-cols-3 gap-16">
+                                {/* Form */}
+                                <div className="space-y-10">
+                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">{editId ? 'MODIFY' : 'DEPLOY'} ARTICLE</h2>
+                                    <form onSubmit={saveProduct} className="space-y-6">
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Article Name</p>
+                                            <input className="input-dark" value={pName} onChange={e => setPName(e.target.value)} required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Price (PKR)</p>
+                                            <input type="number" className="input-dark" value={pPrice} onChange={e => setPPrice(e.target.value)} required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Stock Quantity (0 = Sold Out)</p>
+                                            <input type="number" className="input-dark" value={pStock} onChange={e => setPStock(e.target.value)} required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Category</p>
+                                            <select className="input-dark appearance-none" value={pCat} onChange={e => setPCat(e.target.value)}>
+                                                {config.categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Image URL</p>
+                                            <input className="input-dark" value={pImg} onChange={e => setPImg(e.target.value)} required />
+                                        </div>
+                                        <button className="w-full btn-premium text-[10px] mt-4">{editId ? 'COMMIT CHANGES' : 'DEPLOY TO MAIN'}</button>
+                                        {editId && <button type="button" onClick={resetForm} className="w-full luxury-text text-[8px] opacity-40 mt-2">Cancel Edit</button>}
+                                    </form>
+                                </div>
+
+                                {/* List */}
+                                <div className="lg:col-span-2 space-y-10">
+                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">LIVE INVENTORY [{products.length}]</h2>
+                                    <div className="space-y-6">
+                                        {products.map(p => (
+                                            <div key={p.id} className="flex space-x-6 bg-white/5 p-4 border border-white/5 items-center">
+                                                <img src={p.imageUrl} className="w-20 h-24 object-cover grayscale" />
+                                                <div className="flex-1 space-y-1">
+                                                    <p className="luxury-text text-[8px] opacity-40">{p.category}</p>
+                                                    <h3 className="luxury-text text-[10px]">{p.name}</h3>
+                                                    <p className="luxury-text text-[10px] opacity-60">Rs.{p.price.toLocaleString()}</p>
+                                                    <div className="flex items-center space-x-2">
+                                                        <div className={`w-2 h-2 rounded-full ${p.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                        <span className="text-[10px] font-bold">{p.stock > 0 ? `IN STOCK (${p.stock})` : 'SOLD OUT'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col space-y-3">
+                                                    <button onClick={() => {
+                                                        setEditId(p.id); setPName(p.name); setPPrice(p.price); setPImg(p.imageUrl); setPStock(p.stock); setPCat(p.category);
+                                                    }} className="luxury-text text-[8px] hover:text-white opacity-40">EDIT</button>
+                                                    <button onClick={() => deleteProduct(p.id)} className="luxury-text text-[8px] text-red-500 opacity-60">REMOVE</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="max-w-2xl mx-auto space-y-20">
+                                {/* WhatsApp Config */}
+                                <section className="space-y-8">
+                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">COMMUNICATION SETTINGS</h2>
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Master WhatsApp Number</p>
+                                            <input className="input-dark" value={config.whatsapp} onChange={e => setConfig({...config, whatsapp: e.target.value})} onBlur={() => saveConfig(config)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="luxury-text text-[8px] opacity-40">Automated Prefix Message</p>
+                                            <textarea className="input-dark h-24" value={config.message} onChange={e => setConfig({...config, message: e.target.value})} onBlur={() => saveConfig(config)} />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Categories Config */}
+                                <section className="space-y-8">
+                                    <h2 className="luxury-text text-xs border-b border-white/10 pb-4">CATEGORY ARCHITECTURE</h2>
+                                    <div className="space-y-6">
+                                        <div className="flex space-x-4">
+                                            <input className="input-dark" placeholder="NEW CATEGORY NAME" value={newCat} onChange={e => setNewCat(e.target.value)} />
+                                            <button onClick={addCategory} className="btn-premium px-10 text-[9px]">ADD</button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {config.categories.map(c => (
+                                                <div key={c} className="bg-white/5 border border-white/10 p-4 flex justify-between items-center">
+                                                    <span className="luxury-text text-[9px]">{c}</span>
+                                                    <button onClick={() => removeCategory(c)} className="text-red-500 text-sm">×</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const Root = () => {
+            const [isAuthed, setIsAuthed] = useState(false);
+            return isAuthed ? <Dashboard /> : <Login onLogin={() => setIsAuthed(true)} />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Root />);
     </script>
 </body>
 </html>
